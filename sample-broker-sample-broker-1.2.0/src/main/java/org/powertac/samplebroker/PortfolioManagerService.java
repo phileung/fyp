@@ -103,15 +103,15 @@ implements PortfolioManager, Initializable, Activatable
   // or in top-level config file
   @ConfigurableValue(valueType = "Double",
           description = "target profit margin")
-  private double defaultMargin = 0.5;
+  private double defaultMargin = 0.1;
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")
-  private double fixedPerKwh = -0.06;
+  private double fixedPerKwh = -0.01;
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
-  private double defaultPeriodicPayment = -1.0;
+  private double defaultPeriodicPayment = -0.5;
 
   /**
    * Default constructor registers for messages, must be called after 
