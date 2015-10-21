@@ -111,7 +111,7 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
-  private double defaultPeriodicPayment = -0.5;
+  private double defaultPeriodicPayment = -0.005;
 
   /**
    * Default constructor registers for messages, must be called after 
@@ -304,10 +304,16 @@ implements PortfolioManager, Initializable, Activatable
     
     if (TariffTransaction.Type.SIGNUP == txType) {
       // keep track of customer counts
+	  System.out.println("Signup! customer number: " + ttx.getCustomerCount());
+	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  System.out.println("=====================================");
       record.signup(ttx.getCustomerCount());
     }
     else if (TariffTransaction.Type.WITHDRAW == txType) {
       // customers presumably found a better deal
+	  System.out.println("Quit! customer number: " + ttx.getCustomerCount());
+	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  System.out.println("=====================================");
       record.withdraw(ttx.getCustomerCount());
     }
     else if (TariffTransaction.Type.PRODUCE == txType) {
@@ -336,6 +342,8 @@ implements PortfolioManager, Initializable, Activatable
   {
     Broker source = tr.getBroker();
     log.info("Revoke tariff " + tr.getTariffId()
+             + " from " + tr.getBroker().getUsername());
+	System.out.println("Revoke tariff " + tr.getTariffId()
              + " from " + tr.getBroker().getUsername());
     // if it's from some other broker, we need to remove it from the
     // tariffRepo, and from the competingTariffs list
@@ -391,6 +399,7 @@ implements PortfolioManager, Initializable, Activatable
   {
     // remember that market prices are per mwh, but tariffs are by kwh
     double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
+	System.out.println("marketPrice = "+marketPrice);
     // for each power type representing a customer population,
     // create a tariff that's better than what's available
     for (PowerType pt : customerProfiles.keySet()) {
@@ -405,8 +414,8 @@ implements PortfolioManager, Initializable, Activatable
         rateValue *= 0.7; // Magic number!! price break for interruptible
       }
       TariffSpecification spec =
-          new TariffSpecification(brokerContext.getBroker(), pt)
-              .withPeriodicPayment(defaultPeriodicPayment);
+          new TariffSpecification(brokerContext.getBroker(), pt);
+              //.withPeriodicPayment(defaultPeriodicPayment);
       Rate rate = new Rate().withValue(rateValue);
       if (pt.isInterruptible()) {
         // set max curtailment
@@ -479,8 +488,8 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION)
-                .withPeriodicPayment(defaultPeriodicPayment * 1.1);
+                                    PowerType.CONSUMPTION);
+                //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
           Rate rate = new Rate().withValue(rateValue);
           spec.addRate(rate);
           if (null != oldc)
