@@ -390,6 +390,9 @@ implements PortfolioManager, Initializable, Activatable
     else {
       // we have some, are they good enough?
       improveTariffs();
+	  if(timeslotIndex%100 == 0)
+	  createInitialTariffs();
+	  
     }
   }
   
@@ -406,29 +409,30 @@ implements PortfolioManager, Initializable, Activatable
       // we'll just do fixed-rate tariffs for now
 	System.out.println(pt);
       double rateValue;
-      if (pt.isConsumption())
+     // if (pt.isConsumption())
         rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
-      else
+     // else
         //rateValue = (-1.0 * marketPrice / (1.0 + defaultMargin));
-        rateValue = -2.0 * marketPrice;
-      if (pt.isInterruptible()) {
-        rateValue *= 0.7; // Magic number!! price break for interruptible
-      }
+      //  rateValue = -2.0 * marketPrice;
+    //  if (pt.isInterruptible()) {
+    //    rateValue *= 0.7; // Magic number!! price break for interruptible
+    //  }
+	  
       TariffSpecification spec =
-          new TariffSpecification(brokerContext.getBroker(), pt);
+          new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION);
               //.withPeriodicPayment(defaultPeriodicPayment);
       Rate rate = new Rate().withValue(rateValue);
-      if (pt.isInterruptible()) {
+    //  if (pt.isInterruptible()) {
         // set max curtailment
-        rate.withMaxCurtailment(0.1);
-      }
-      if (pt.isStorage()) {
+     //   rate.withMaxCurtailment(0.1);
+    //  }
+    //  if (pt.isStorage()) {
         // add a RegulationRate
-        RegulationRate rr = new RegulationRate();
-        rr.withUpRegulationPayment(-rateValue * 0.5)
-            .withDownRegulationPayment(rateValue * 0.5); // magic numbers
-        spec.addRate(rr);
-      }
+       // RegulationRate rr = new RegulationRate();
+      //  rr.withUpRegulationPayment(-rateValue * 0.5)
+       //     .withDownRegulationPayment(rateValue * 0.5); // magic numbers
+       // spec.addRate(rr);
+      //}
       spec.addRate(rate);
       customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
       tariffRepo.addSpecification(spec);
