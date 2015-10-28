@@ -107,7 +107,7 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")
-  private double fixedPerKwh = -0.01;
+  private double fixedPerKwh = -0.5;
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
@@ -423,10 +423,10 @@ implements PortfolioManager, Initializable, Activatable
 			rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
 		}
 		TariffSpecification spec =
-        new TariffSpecification(brokerContext.getBroker(), pt)
-		.withMinDuration(2560000)
-		.withSignupPayment(0.001)
-		.withEarlyWithdrawPayment(-0.1);	
+        new TariffSpecification(brokerContext.getBroker(), pt);
+		//.withMinDuration(2560000)
+		//.withSignupPayment(0.001)
+		//.withEarlyWithdrawPayment(-0.1);	
       Rate rate = new Rate().withValue(rateValue);
       spec.addRate(rate);
       customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
@@ -488,7 +488,7 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION).withMinDuration(2560000).withEarlyWithdrawPayment(0.1);
+                                    PowerType.CONSUMPTION);//.withMinDuration(2560000).withEarlyWithdrawPayment(0.1);
                 //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
           Rate rate = new Rate().withValue(rateValue);
           spec.addRate(rate);
