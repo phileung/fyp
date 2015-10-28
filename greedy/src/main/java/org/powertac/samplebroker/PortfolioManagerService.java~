@@ -414,7 +414,7 @@ implements PortfolioManager, Initializable, Activatable
 	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
 		
 	TariffSpecification spec =
-    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
+    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION);
 		.withMinDuration(2560000)
 		.withSignupPayment(0.001)
 		.withEarlyWithdrawPayment(-0.1);	
@@ -430,7 +430,7 @@ implements PortfolioManager, Initializable, Activatable
 		if (pt.isProduction()){
 		rateValue = -2.0 * marketPrice;	
 		TariffSpecification spec2 =
-        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
+        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION);
 		.withMinDuration(2560000)
 		.withSignupPayment(0.001)
 		.withEarlyWithdrawPayment(-0.1);	
