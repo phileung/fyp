@@ -107,7 +107,7 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")
-  private double fixedPerKwh = -0.5;
+  private double fixedPerKwh = -10;
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
@@ -394,7 +394,7 @@ implements PortfolioManager, Initializable, Activatable
     else {
       // we have some, are they good enough?
       improveTariffs();
-	  if((timeslotIndex-tariff_creation)%6 == 0)
+	  if((timeslotIndex-tariff_creation)%6000 == 0)
 	  System.out.println("time to creat new tariff");
 	  createInitialTariffs();
 	  
@@ -410,28 +410,37 @@ implements PortfolioManager, Initializable, Activatable
 	System.out.println("marketPrice = "+marketPrice);
     // for each power type representing a customer population,
     // create a tariff that's better than what's available
-    for (PowerType pt : customerProfiles.keySet()) {
-      // we'll just do fixed-rate tariffs for now
-	//System.out.println(pt);
-      double rateValue;
-		if (pt.isProduction()){
-		rateValue = -2.0 * marketPrice;
-		pt = PowerType.PRODUCTION;
-		}
-		else {
-		pt = PowerType.CONSUMPTION;
-			rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
-		}
-		TariffSpecification spec =
-        new TariffSpecification(brokerContext.getBroker(), pt);
+	double rateValue;
+	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
+		
+	TariffSpecification spec =
+    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION);
 		//.withMinDuration(2560000)
 		//.withSignupPayment(0.001)
 		//.withEarlyWithdrawPayment(-0.1);	
-      Rate rate = new Rate().withValue(rateValue);
-      spec.addRate(rate);
-      customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
-      tariffRepo.addSpecification(spec);
-      brokerContext.sendMessage(spec);
+    Rate rate = new Rate().withValue(rateValue);
+    spec.addRate(rate);
+    customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
+    tariffRepo.addSpecification(spec);
+    brokerContext.sendMessage(spec);
+    for (PowerType pt : customerProfiles.keySet()) {
+      // we'll just do fixed-rate tariffs for now
+	//System.out.println(pt);
+      
+		if (pt.isProduction()){
+		rateValue = -1.5 * marketPrice;	
+		TariffSpecification spec2 =
+        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION);
+		//.withMinDuration(2560000)
+		//.withSignupPayment(0.001)
+		//.withEarlyWithdrawPayment(-0.1);	
+      rate = new Rate().withValue(rateValue);
+      spec2.addRate(rate);
+      customerSubscriptions.put(spec2, new HashMap<CustomerInfo, CustomerRecord>());
+      tariffRepo.addSpecification(spec2);
+      brokerContext.sendMessage(spec2);
+		break;
+		}
     }
   }
 
