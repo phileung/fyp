@@ -412,7 +412,7 @@ implements PortfolioManager, Initializable, Activatable
     // create a tariff that's better than what's available
     for (PowerType pt : customerProfiles.keySet()) {
       // we'll just do fixed-rate tariffs for now
-	System.out.println(pt);
+	//System.out.println(pt);
       double rateValue;
 		if (pt.isProduction()){
 		rateValue = -2.0 * marketPrice;
