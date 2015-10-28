@@ -73,11 +73,11 @@ implements MarketManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Lower end (most negative) of bid price range")
-  private double buyLimitPriceMin = -70.0;  // broker pays
+  private double buyLimitPriceMin = -50.0;  // broker pays
 
   @ConfigurableValue(valueType = "Double",
           description = "Upper end (most positive) of ask price range")
-  private double sellLimitPriceMax = 70.0;    // other broker pays
+  private double sellLimitPriceMax = 50.0;    // other broker pays
 
   @ConfigurableValue(valueType = "Double",
           description = "Lower end (least positive) of ask price range")

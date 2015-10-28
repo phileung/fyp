@@ -111,7 +111,8 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
-  private double defaultPeriodicPayment = -0.005;
+  private double defaultPeriodicPayment = 0;
+  
 
   /**
    * Default constructor registers for messages, must be called after 
@@ -304,16 +305,16 @@ implements PortfolioManager, Initializable, Activatable
     
     if (TariffTransaction.Type.SIGNUP == txType) {
       // keep track of customer counts
-	  System.out.println("Signup! customer number: " + ttx.getCustomerCount());
-	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  System.out.println("=====================================");
+	  //System.out.println("Signup! customer number: " + ttx.getCustomerCount());
+	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  //System.out.println("=====================================");
       record.signup(ttx.getCustomerCount());
     }
     else if (TariffTransaction.Type.WITHDRAW == txType) {
       // customers presumably found a better deal
-	  System.out.println("Quit! customer number: " + ttx.getCustomerCount());
-	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  System.out.println("=====================================");
+	  //System.out.println("Quit! customer number: " + ttx.getCustomerCount());
+	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  //System.out.println("=====================================");
       record.withdraw(ttx.getCustomerCount());
     }
     else if (TariffTransaction.Type.PRODUCE == txType) {
@@ -380,17 +381,21 @@ implements PortfolioManager, Initializable, Activatable
    * Called after TimeslotComplete msg received. Note that activation order
    * among modules is non-deterministic.
    */
+   private int tariff_creation=0;
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
     if (customerSubscriptions.size() == 0) {
       // we (most likely) have no tariffs
       createInitialTariffs();
+	  tariff_creation = 0;
+	  tariff_creation = timeslotIndex;
     }
     else {
       // we have some, are they good enough?
       improveTariffs();
-	  if(timeslotIndex%100 == 0)
+	  if((timeslotIndex-tariff_creation)%6 == 0)
+	  System.out.println("time to creat new tariff");
 	  createInitialTariffs();
 	  
     }
@@ -408,30 +413,20 @@ implements PortfolioManager, Initializable, Activatable
     for (PowerType pt : customerProfiles.keySet()) {
       // we'll just do fixed-rate tariffs for now
       double rateValue;
-     // if (pt.isConsumption())
-        rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
-     // else
-        //rateValue = (-1.0 * marketPrice / (1.0 + defaultMargin));
-      //  rateValue = -2.0 * marketPrice;
-    //  if (pt.isInterruptible()) {
-    //    rateValue *= 0.7; // Magic number!! price break for interruptible
-    //  }
-	  
-      TariffSpecification spec =
-          new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION);
-              //.withPeriodicPayment(defaultPeriodicPayment);
+		if (pt.isProduction()){
+		rateValue = -2.0 * marketPrice;
+		pt = PowerType.PRODUCTION;
+		}
+		else {
+		pt = PowerType.CONSUMPTION;
+			rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
+		}
+		TariffSpecification spec =
+        new TariffSpecification(brokerContext.getBroker(), pt)
+		.withMinDuration(2560000)
+		.withSignupPayment(0.001)
+		.withEarlyWithdrawPayment(-0.1);	
       Rate rate = new Rate().withValue(rateValue);
-    //  if (pt.isInterruptible()) {
-        // set max curtailment
-     //   rate.withMaxCurtailment(0.1);
-    //  }
-    //  if (pt.isStorage()) {
-        // add a RegulationRate
-       // RegulationRate rr = new RegulationRate();
-      //  rr.withUpRegulationPayment(-rateValue * 0.5)
-       //     .withDownRegulationPayment(rateValue * 0.5); // magic numbers
-       // spec.addRate(rr);
-      //}
       spec.addRate(rate);
       customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
       tariffRepo.addSpecification(spec);
@@ -492,7 +487,7 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION);
+                                    PowerType.CONSUMPTION).withMinDuration(2560000).withEarlyWithdrawPayment(0.1);
                 //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
           Rate rate = new Rate().withValue(rateValue);
           spec.addRate(rate);
