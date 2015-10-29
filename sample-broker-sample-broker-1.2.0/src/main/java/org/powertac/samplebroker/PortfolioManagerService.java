@@ -107,7 +107,7 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")
-  private double fixedPerKwh = -0.6;
+  private double fixedPerKwh = -0.35;
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")

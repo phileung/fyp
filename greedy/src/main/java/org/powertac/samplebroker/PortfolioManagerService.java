@@ -394,7 +394,8 @@ implements PortfolioManager, Initializable, Activatable
     else {
       // we have some, are they good enough?
       improveTariffs();
-	  System.out.println("time to creat new tariff");
+		double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
+		System.out.println("marketPrice = "+marketPrice);
 	  if((timeslotIndex-tariff_creation)%6000 == 0){
 	  System.out.println("time to creat new tariff");
 	  createInitialTariffs();}
@@ -426,9 +427,9 @@ implements PortfolioManager, Initializable, Activatable
 		
 	TariffSpecification spec =
     new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
-		.withMinDuration(2560000)
-		.withSignupPayment(0.001)
-		.withEarlyWithdrawPayment(-10.1);	
+		.withMinDuration(256000000)
+		.withSignupPayment(0.1)
+		.withEarlyWithdrawPayment(-10000.1);	
     Rate rate = new Rate().withValue(rateValue);
     spec.addRate(rate);
     customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
@@ -442,9 +443,9 @@ implements PortfolioManager, Initializable, Activatable
 		rateValue = -2.0 * marketPrice;	
 		TariffSpecification spec2 =
         new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
-		.withMinDuration(2560000)
-		.withSignupPayment(0.001)
-		.withEarlyWithdrawPayment(-0.1);	
+		.withMinDuration(256000000)
+		.withSignupPayment(0.1)
+		.withEarlyWithdrawPayment(-10000.1);	
       rate = new Rate().withValue(rateValue);
       spec2.addRate(rate);
       customerSubscriptions.put(spec2, new HashMap<CustomerInfo, CustomerRecord>());
@@ -508,9 +509,9 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION).withMinDuration(2560000).withEarlyWithdrawPayment(-10.1);
+                                    PowerType.CONSUMPTION).withMinDuration(256000000).withEarlyWithdrawPayment(-10000.1);
                 //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
-          Rate rate = new Rate().withValue(rateValue);
+          Rate rate = new Rate().withValue(rateValue*0.9);
           spec.addRate(rate);
           if (null != oldc)
             spec.addSupersedes(oldc.getId());
