@@ -16,9 +16,9 @@ samplebroker.core.powerTacBroker.usageRecordLength = 168
 
 # -------------- Portfolio Manager parameters ----------------
 /**
-#samplebroker.portfolioManagerService.defaultMargin = 0.01
-#samplebroker.portfolioManagerService.fixedPerKwh = -0.0001
-#samplebroker.portfolioManagerService.defaultPeriodicPayment = 0
+samplebroker.portfolioManagerService.defaultMargin = 0.01
+samplebroker.portfolioManagerService.fixedPerKwh = -0.0001
+samplebroker.portfolioManagerService.defaultPeriodicPayment = 0
 */
 /**
 # -------------- Market Manager parameters ----------------
