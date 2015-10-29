@@ -103,7 +103,7 @@ implements PortfolioManager, Initializable, Activatable
   // or in top-level config file
   @ConfigurableValue(valueType = "Double",
           description = "target profit margin")
-  private double defaultMargin = 0.1;
+  private double defaultMargin = 0.01;
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")

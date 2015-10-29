@@ -394,15 +394,26 @@ implements PortfolioManager, Initializable, Activatable
     else {
       // we have some, are they good enough?
       improveTariffs();
+	  System.out.println("time to creat new tariff");
 	  if((timeslotIndex-tariff_creation)%6000 == 0){
 	  System.out.println("time to creat new tariff");
 	  createInitialTariffs();}
 	  
     }
   }
+
+	//create new Tariffs when conditions meet
+	private void createTariff()
+	{
+	
+	
+	}
   
   // Creates initial tariffs for the main power types. These are simple
   // fixed-rate two-part tariffs that give the broker a fixed margin.
+  
+  
+  
   private void createInitialTariffs ()
   {
     // remember that market prices are per mwh, but tariffs are by kwh
@@ -417,7 +428,7 @@ implements PortfolioManager, Initializable, Activatable
     new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
 		.withMinDuration(2560000)
 		.withSignupPayment(0.001)
-		.withEarlyWithdrawPayment(-0.1);	
+		.withEarlyWithdrawPayment(-10.1);	
     Rate rate = new Rate().withValue(rateValue);
     spec.addRate(rate);
     customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
@@ -497,7 +508,7 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION).withMinDuration(2560000).withEarlyWithdrawPayment(0.1);
+                                    PowerType.CONSUMPTION).withMinDuration(2560000).withEarlyWithdrawPayment(-10.1);
                 //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
           Rate rate = new Rate().withValue(rateValue);
           spec.addRate(rate);
