@@ -107,23 +107,11 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")
-  private double fixedPerKwh = -0.2;
+  private double fixedPerKwh = -100;
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
   private double defaultPeriodicPayment = 0;
-  
-  @ConfigurableValue(valueType = "Double",
-          description = "signup payment")
-  private double signupPayment = 0;  
-  
-  @ConfigurableValue(valueType = "Double",
-          description = "early withdraw payment")
-  private double earlyWithdrawPayment = 0;  
-
-  @ConfigurableValue(valueType = "Double",
-          description = "min duration")
-  private double minDuration = 0;    
   
 
   /**
@@ -406,27 +394,15 @@ implements PortfolioManager, Initializable, Activatable
     else {
       // we have some, are they good enough?
       improveTariffs();
-		double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
-		System.out.println("marketPrice = "+marketPrice);
 	  if((timeslotIndex-tariff_creation)%6000 == 0){
 	  System.out.println("time to creat new tariff");
 	  createInitialTariffs();}
 	  
     }
   }
-
-	//create new Tariffs when conditions meet
-	private void createTariff()
-	{
-	
-	
-	}
   
   // Creates initial tariffs for the main power types. These are simple
   // fixed-rate two-part tariffs that give the broker a fixed margin.
-  
-  
-  
   private void createInitialTariffs ()
   {
     // remember that market prices are per mwh, but tariffs are by kwh
@@ -438,10 +414,10 @@ implements PortfolioManager, Initializable, Activatable
 	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
 		
 	TariffSpecification spec =
-    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
-		.withMinDuration(256000000)
-		.withSignupPayment(signupPayment)
-		.withEarlyWithdrawPayment(earlyWithdrawPayment);	
+    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION);
+		//.withMinDuration(2560000)
+		//.withSignupPayment(0.001)
+		//.withEarlyWithdrawPayment(-0.1);	
     Rate rate = new Rate().withValue(rateValue);
     spec.addRate(rate);
     customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
@@ -452,12 +428,12 @@ implements PortfolioManager, Initializable, Activatable
 	//System.out.println(pt);
       
 		if (pt.isProduction()){
-		rateValue = -2.0 * marketPrice;	
+		rateValue = -1.5 * marketPrice;	
 		TariffSpecification spec2 =
-        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
-		.withMinDuration(256000000)
-		.withSignupPayment(signupPayment)
-		.withEarlyWithdrawPayment(earlyWithdrawPayment);	
+        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION);
+		//.withMinDuration(2560000)
+		//.withSignupPayment(0.001)
+		//.withEarlyWithdrawPayment(-0.1);	
       rate = new Rate().withValue(rateValue);
       spec2.addRate(rate);
       customerSubscriptions.put(spec2, new HashMap<CustomerInfo, CustomerRecord>());
@@ -498,7 +474,7 @@ implements PortfolioManager, Initializable, Activatable
       }
     }
     // magic-number hack to supersede a tariff
-    if (0 == timeslotIndex) {
+    if (380 == timeslotIndex) {
       // find the existing CONSUMPTION tariff
       TariffSpecification oldc = null;
       List<TariffSpecification> candidates =
@@ -521,9 +497,9 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION).withMinDuration(256000000).withEarlyWithdrawPayment(earlyWithdrawPayment);
+                                    PowerType.CONSUMPTION);//.withMinDuration(2560000).withEarlyWithdrawPayment(0.1);
                 //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
-          Rate rate = new Rate().withValue(rateValue*0.9);
+          Rate rate = new Rate().withValue(rateValue);
           spec.addRate(rate);
           if (null != oldc)
             spec.addSupersedes(oldc.getId());
