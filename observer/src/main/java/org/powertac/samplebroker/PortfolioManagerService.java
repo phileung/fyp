@@ -446,6 +446,7 @@ implements PortfolioManager, Initializable, Activatable
 		old_mean = mean_fixed;
 		try{
 			fw.write("Day: " + dayn);
+			fw.write(System.getProperty("line.separator"));
 			fw.write("Mean of fixed rate: " + mean_fixed);
 			fw.write(System.getProperty("line.separator"));
 			fw.write("SD of fixed rate: " + sd_fixed);
