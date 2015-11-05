@@ -395,6 +395,7 @@ implements PortfolioManager, Initializable, Activatable
   public synchronized void activate (int timeslotIndex)
   {
 	System.out.println("timeslot is: " + timeslotIndex);
+	System.out.println("openfile flag: " + fwflag);
 	if(fwflag){
 	try{
 	fw = new FileWriter("stat.txt");
@@ -452,6 +453,7 @@ implements PortfolioManager, Initializable, Activatable
 			fw.write(System.getProperty("line.separator"));
 			fw.write("Number of tariffs publish in 24 timeslot: " + tariff_count);
 			fw.write(System.getProperty("line.separator"));
+			fw.flush();
 			System.out.println("Mean of fixed rate: " + mean_fixed);
 			System.out.println("SD of fixed rate: " + sd_fixed);
 			System.out.println("rate of change of fixed rate: " + diff_mean_fixed);
