@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 //io
 import java.io.*;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 import org.joda.time.Instant;
@@ -436,6 +437,8 @@ implements PortfolioManager, Initializable, Activatable
         }
 		mean_fixed = m.mean(fixedRateList);
 		sd_fixed = m.sd(fixedRateList);
+		double min_rate = Collections.min(fixedRateList);
+		double max_rate = Collections.max(fixedRateList);
 		if (old_mean == 0){
 		diff_mean_fixed = 0;
 		}
@@ -448,6 +451,10 @@ implements PortfolioManager, Initializable, Activatable
 			fw.write(System.getProperty("line.separator"));
 			fw.write("Mean of fixed rate: " + mean_fixed);
 			fw.write(System.getProperty("line.separator"));
+			fw.write("Max of fixed rate: " + max_rate);
+			fw.write(System.getProperty("line.separator"));
+			fw.write("Min of fixed rate: " + min_rate);
+			fw.write(System.getProperty("line.separator"));			
 			fw.write("SD of fixed rate: " + sd_fixed);
 			fw.write(System.getProperty("line.separator"));
 			fw.write("rate of change of fixed rate: " + diff_mean_fixed);
@@ -461,6 +468,8 @@ implements PortfolioManager, Initializable, Activatable
 			fw.flush();
 			System.out.println("Day: " + dayn);
 			System.out.println("Mean of fixed rate: " + mean_fixed);
+			System.out.println("Max of fixed rate: " + max_rate);
+			System.out.println("Mean of fixed rate: " + min_rate);
 			System.out.println("SD of fixed rate: " + sd_fixed);
 			System.out.println("rate of change of fixed rate: " + diff_mean_fixed);
 			System.out.println("Number of tariffs publish in 24 timeslot: " + tariff_count );
