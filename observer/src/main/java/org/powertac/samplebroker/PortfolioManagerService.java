@@ -407,7 +407,7 @@ implements PortfolioManager, Initializable, Activatable
 	methods m = new methods();
 	//fixedRateList.add(2.0);
 	TariffSpecification contariff = null;
-	if (timeslotIndex%24 == 0){
+	if (timeslotIndex%24 == 0 && dayn < 100){
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
       if (null == tars || 0 == tars.size()){
         System.out.println("No tariffs found");
