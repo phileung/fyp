@@ -407,7 +407,9 @@ implements PortfolioManager, Initializable, Activatable
 	methods m = new methods();
 	//fixedRateList.add(2.0);
 	TariffSpecification contariff = null;
+	double old_mean = 0.0;
 	if (timeslotIndex%24 == 0 && dayn < 100){
+	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed;
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
       if (null == tars || 0 == tars.size()){
         System.out.println("No tariffs found");
@@ -419,10 +421,7 @@ implements PortfolioManager, Initializable, Activatable
 	
 		}		
 		}
-      else {
-		double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed;
-		double old_mean = 0.0;
-		
+      else {	
 		double ratevalue;
 		List<Double> fixedRateList = new ArrayList<Double>();			
         for (TariffSpecification tar: tars) {
