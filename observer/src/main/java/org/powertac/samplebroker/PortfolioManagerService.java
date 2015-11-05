@@ -455,6 +455,10 @@ implements PortfolioManager, Initializable, Activatable
 		old_min = min_rate;
 		old_max = max_rate;
 		try{
+			mean_fixed = (-1)*mean_fixed;
+			max_rate = (-1)*max_rate;
+			diff_mean_fixed = (-1)*diff_mean_fixed;
+			diff_max_fixed = (-1)*diff_max_fixed;
 			fw.write("Day: " + dayn);
 			fw.write(System.getProperty("line.separator"));
 			fw.write("Mean of fixed rate: " + mean_fixed);
@@ -479,12 +483,12 @@ implements PortfolioManager, Initializable, Activatable
 			fw.write(System.getProperty("line.separator"));
 			fw.flush();
 			System.out.println("Day: " + dayn);
-			System.out.println("Mean of fixed rate: " + mean_fixed*(-1));
-			System.out.println("Min of fixed rate: " + max_rate*(-1));
+			System.out.println("Mean of fixed rate: " + mean_fixed);
+			System.out.println("Min of fixed rate: " + max_rate);
 			//System.out.println("Minn of fixed rate: " + min_rate);
 			System.out.println("SD of fixed rate: " + sd_fixed);
-			System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed*(-1));
-			System.out.println("rate of change of min fixed rate: " + diff_max_fixed*(-1));			
+			System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
+			System.out.println("rate of change of min fixed rate: " + diff_max_fixed);			
 			//System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
 			System.out.println("Number of tariffs publish in 24 timeslot: " + tariff_count );
 		}
