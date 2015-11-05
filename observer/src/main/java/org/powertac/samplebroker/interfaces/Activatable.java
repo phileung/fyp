@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 package org.powertac.samplebroker.interfaces;
-
+import java.io.*;
 /**
  * Interface for services that need to be called when the final
  * TimeslotComplete message has been received from the server.

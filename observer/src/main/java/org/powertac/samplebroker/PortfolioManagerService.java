@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+//io
+import java.io.*;
 
 import org.apache.log4j.Logger;
 import org.joda.time.Instant;
@@ -250,8 +252,10 @@ implements PortfolioManager, Initializable, Activatable
    * published. If it's not ours, then it's a competitor's tariff. We keep track of 
    * competing tariffs locally, and we also store them in the tariffRepo.
    */
+   private int tariff_count = 0;
   public synchronized void handleMessage (TariffSpecification spec)
   {
+	tariff_count++;
     Broker theBroker = spec.getBroker();
     if (brokerContext.getBrokerUsername().equals(theBroker.getUsername())) {
       if (theBroker != brokerContext.getBroker())
@@ -382,24 +386,121 @@ implements PortfolioManager, Initializable, Activatable
    * among modules is non-deterministic.
    */
    private int tariff_creation=0;
+   
+   private boolean fwflag = true;
+	
+   private FileWriter fw = null;
+   
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
-    if (customerSubscriptions.size() == 0) {
-      // we (most likely) have no tariffs
-      createInitialTariffs();
-	  tariff_creation = 0;
-	  tariff_creation = timeslotIndex;
-    }
-    else {
-      // we have some, are they good enough?
-      improveTariffs();
-	  if((timeslotIndex-tariff_creation)%6000 == 0){
-	  System.out.println("time to creat new tariff");
-	  createInitialTariffs();}
-	  
-    }
+	System.out.println("timeslot is: " + timeslotIndex);
+	if(fwflag){
+	try{
+	fw = new FileWriter("stat.txt");
+	fwflag = false;
+	}
+	catch(IOException e){
+	}}	
+	
+	methods m = new methods();
+	//fixedRateList.add(2.0);
+	TariffSpecification contariff = null;
+	if (timeslotIndex%24 == 0){
+	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
+      if (null == tars || 0 == tars.size()){
+        System.out.println("No tariffs found");
+		try{
+		fw.write("No tariffs found");
+		fw.write(System.getProperty("line.separator"));
+		}
+		catch(IOException e){
+	
+		}		
+		}
+      else {
+		double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed;
+		double old_mean = 0.0;
+		
+		double ratevalue;
+		List<Double> fixedRateList = new ArrayList<Double>();			
+        for (TariffSpecification tar: tars) {
+		List<Rate> ratev = tar.getRates();
+		for (Rate rates: ratev){
+		if(rates.isFixed()){
+		ratevalue = rates.getValue();
+		System.out.println(ratevalue);
+		fixedRateList.add(ratevalue);
+		}
+		}
+        }
+		mean_fixed = m.mean(fixedRateList);
+		sd_fixed = m.sd(fixedRateList);
+		if (old_mean == 0){
+		diff_mean_fixed = 0;
+		}
+		else{
+		diff_mean_fixed = mean_fixed - old_mean;
+		}
+		old_mean = mean_fixed;
+		try{
+			fw.write("Mean of fixed rate: " + mean_fixed);
+			fw.write(System.getProperty("line.separator"));
+			fw.write("SD of fixed rate: " + sd_fixed);
+			fw.write(System.getProperty("line.separator"));
+			fw.write("rate of change of fixed rate: " + diff_mean_fixed);
+			fw.write(System.getProperty("line.separator"));
+			fw.write("Number of tariffs publish in 24 timeslot: " + tariff_count);
+			fw.write(System.getProperty("line.separator"));
+			System.out.println("Mean of fixed rate: " + mean_fixed);
+			System.out.println("SD of fixed rate: " + sd_fixed);
+			System.out.println("rate of change of fixed rate: " + diff_mean_fixed);
+			System.out.println("Number of tariffs publish in 24 timeslot: " + tariff_count );
+		}
+		catch(IOException e){
+	
+		}
+		
+		//System.out.println(contariff.getRealizedPrice);
+
+		
+		}
+		
+		tariff_count = 0;
+	}		
   }
+  
+class methods{
+
+public double sum(List<Double> a){
+	if(a.size() > 0){
+	double sum = 0;
+	for(Double i: a){
+	sum = sum + i;
+	}
+	return sum;
+	}
+	return 0;
+}
+public double mean (List<Double> a){
+	double sum = sum(a);
+	double mean = 0;
+	if (a.size() != 0){
+	mean = sum / (a.size() * 1.0);
+	return mean;
+	}
+	else
+	return 0;
+}
+public double sd (List<Double> a){
+    double sum = 0;
+    double mean = mean(a);
+ 
+    for (double i : a)
+        sum += Math.pow((i - mean), 2);
+    return Math.sqrt( sum / ( a.size() - 1 ) ); 
+    }
+}
   
   // Creates initial tariffs for the main power types. These are simple
   // fixed-rate two-part tariffs that give the broker a fixed margin.
