@@ -390,6 +390,8 @@ implements PortfolioManager, Initializable, Activatable
    private int dayn = 0;
    private boolean fwflag = true;
    private double old_mean = 0.0;
+   private double old_min = 0.0;
+   private double old_max = 0.0;
    private FileWriter fw = null;
    
   @Override // from Activatable
@@ -410,7 +412,7 @@ implements PortfolioManager, Initializable, Activatable
 	TariffSpecification contariff = null;
 	
 	if (timeslotIndex%24 == 0 && dayn < 100){
-	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed;
+	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed, diff_min_fixed, diff_max_fixed;
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
       if (null == tars || 0 == tars.size()){
         System.out.println("No tariffs found");
@@ -441,11 +443,17 @@ implements PortfolioManager, Initializable, Activatable
 		double max_rate = Collections.max(fixedRateList);
 		if (old_mean == 0){
 		diff_mean_fixed = 0;
+		diff_min_fixed = 0;
+		diff_max_fixed = 0;
 		}
 		else{
 		diff_mean_fixed = mean_fixed - old_mean;
+		diff_max_fixed = max_rate - old_max;
+		diff_min_fixed = min_rate - old_min;
 		}
 		old_mean = mean_fixed;
+		old_min = min_rate;
+		old_max = max_rate;
 		try{
 			fw.write("Day: " + dayn);
 			fw.write(System.getProperty("line.separator"));
