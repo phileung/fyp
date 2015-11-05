@@ -386,7 +386,7 @@ implements PortfolioManager, Initializable, Activatable
    * among modules is non-deterministic.
    */
    private int tariff_creation=0;
-   
+   private int dayn = 0;
    private boolean fwflag = true;
 	
    private FileWriter fw = null;
@@ -445,6 +445,7 @@ implements PortfolioManager, Initializable, Activatable
 		}
 		old_mean = mean_fixed;
 		try{
+			fw.write("Day: " + dayn);
 			fw.write("Mean of fixed rate: " + mean_fixed);
 			fw.write(System.getProperty("line.separator"));
 			fw.write("SD of fixed rate: " + sd_fixed);
@@ -453,7 +454,12 @@ implements PortfolioManager, Initializable, Activatable
 			fw.write(System.getProperty("line.separator"));
 			fw.write("Number of tariffs publish in 24 timeslot: " + tariff_count);
 			fw.write(System.getProperty("line.separator"));
+			fw.write("==========================================");
+			fw.write(System.getProperty("line.separator"));
+			fw.write("==========================================");
+			fw.write(System.getProperty("line.separator"));
 			fw.flush();
+			System.out.println("Day: " + dayn);
 			System.out.println("Mean of fixed rate: " + mean_fixed);
 			System.out.println("SD of fixed rate: " + sd_fixed);
 			System.out.println("rate of change of fixed rate: " + diff_mean_fixed);
@@ -467,7 +473,7 @@ implements PortfolioManager, Initializable, Activatable
 
 		
 		}
-		
+		dayn++;
 		tariff_count = 0;
 	}		
   }
