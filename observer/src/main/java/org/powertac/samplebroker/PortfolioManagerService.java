@@ -465,8 +465,12 @@ implements PortfolioManager, Initializable, Activatable
 			fw.write(System.getProperty("line.separator"));			
 			fw.write("SD of fixed rate: " + sd_fixed);
 			fw.write(System.getProperty("line.separator"));
-			fw.write("rate of change of fixed rate: " + diff_mean_fixed);
+			fw.write("rate of change of mean fixed rate: " + diff_mean_fixed);
 			fw.write(System.getProperty("line.separator"));
+			fw.write("rate of change of max fixed rate: " + diff_max_fixed);
+			fw.write(System.getProperty("line.separator"));
+			fw.write("rate of change of min fixed rate: " + diff_min_fixed);
+			fw.write(System.getProperty("line.separator"));			
 			fw.write("Number of tariffs publish in 24 timeslot: " + tariff_count);
 			fw.write(System.getProperty("line.separator"));
 			fw.write("==========================================");
@@ -479,7 +483,9 @@ implements PortfolioManager, Initializable, Activatable
 			System.out.println("Max of fixed rate: " + max_rate);
 			System.out.println("Mean of fixed rate: " + min_rate);
 			System.out.println("SD of fixed rate: " + sd_fixed);
-			System.out.println("rate of change of fixed rate: " + diff_mean_fixed);
+			System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
+			System.out.println("rate of change of max fixed rate: " + diff_max_fixed);			
+			System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
 			System.out.println("Number of tariffs publish in 24 timeslot: " + tariff_count );
 		}
 		catch(IOException e){
