@@ -388,7 +388,7 @@ implements PortfolioManager, Initializable, Activatable
    private int tariff_creation=0;
    private int dayn = 0;
    private boolean fwflag = true;
-	
+   private double old_mean = 0.0;
    private FileWriter fw = null;
    
   @Override // from Activatable
@@ -407,7 +407,7 @@ implements PortfolioManager, Initializable, Activatable
 	methods m = new methods();
 	//fixedRateList.add(2.0);
 	TariffSpecification contariff = null;
-	double old_mean = 0.0;
+	
 	if (timeslotIndex%24 == 0 && dayn < 100){
 	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed;
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
