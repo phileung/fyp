@@ -393,22 +393,20 @@ implements PortfolioManager, Initializable, Activatable
    * Called after TimeslotComplete msg received. Note that activation order
    * among modules is non-deterministic.
    */
-   private int tariff_creation=0;
+  
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
     if (customerSubscriptions.size() == 0) {
       // we (most likely) have no tariffs
       createInitialTariffs();
-	  tariff_creation = 0;
-	  tariff_creation = timeslotIndex;
     }
     else {
       // we have some, are they good enough?
       improveTariffs();
 		double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
 		System.out.println("marketPrice = "+marketPrice);
-	  if((timeslotIndex-tariff_creation)%6000 == 0){
+	  if(timeslotIndex%6000 == 0){
 	  System.out.println("time to creat new tariff");
 	  createInitialTariffs();}
 	  

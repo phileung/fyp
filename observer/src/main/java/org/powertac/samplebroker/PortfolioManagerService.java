@@ -292,6 +292,7 @@ implements PortfolioManager, Initializable, Activatable
   public synchronized void handleMessage(TariffTransaction ttx)
   {
     // make sure we have this tariff
+	System.out.println("Transaction come");
     TariffSpecification newSpec = ttx.getTariffSpec();
     if (newSpec == null) {
       log.error("TariffTransaction type=" + ttx.getTxType()
@@ -310,16 +311,16 @@ implements PortfolioManager, Initializable, Activatable
     
     if (TariffTransaction.Type.SIGNUP == txType) {
       // keep track of customer counts
-	  //System.out.println("Signup! customer number: " + ttx.getCustomerCount());
-	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  //System.out.println("=====================================");
+	  System.out.println("Signup! customer number: " + ttx.getCustomerCount());
+	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  System.out.println("=====================================");
       record.signup(ttx.getCustomerCount());
     }
     else if (TariffTransaction.Type.WITHDRAW == txType) {
       // customers presumably found a better deal
-	  //System.out.println("Quit! customer number: " + ttx.getCustomerCount());
-	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  //System.out.println("=====================================");
+	  System.out.println("Quit! customer number: " + ttx.getCustomerCount());
+	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  System.out.println("=====================================");
       record.withdraw(ttx.getCustomerCount());
     }
     else if (TariffTransaction.Type.PRODUCE == txType) {
@@ -411,7 +412,7 @@ implements PortfolioManager, Initializable, Activatable
 	//fixedRateList.add(2.0);
 	TariffSpecification contariff = null;
 	
-	if (timeslotIndex%24 == 0 && dayn < 100){
+	if (timeslotIndex%24 == 0){
 	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed, diff_min_fixed, diff_max_fixed;
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
       if (null == tars || 0 == tars.size()){
