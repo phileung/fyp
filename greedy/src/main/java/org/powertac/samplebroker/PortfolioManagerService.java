@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+//io
+import java.io.*;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 import org.joda.time.Instant;
@@ -262,8 +265,10 @@ implements PortfolioManager, Initializable, Activatable
    * published. If it's not ours, then it's a competitor's tariff. We keep track of 
    * competing tariffs locally, and we also store them in the tariffRepo.
    */
+   private int tariff_count = 0;
   public synchronized void handleMessage (TariffSpecification spec)
   {
+	tariff_count++;
     Broker theBroker = spec.getBroker();
     if (brokerContext.getBrokerUsername().equals(theBroker.getUsername())) {
       if (theBroker != brokerContext.getBroker())
@@ -296,10 +301,17 @@ implements PortfolioManager, Initializable, Activatable
    * Handles a TariffTransaction. We only care about certain types: PRODUCE,
    * CONSUME, SIGNUP, and WITHDRAW.
    */
+   
+  private int signupCount = 0;
+  private int consumeCount = 0;
+  private int withdrawCount = 0;
   public synchronized void handleMessage(TariffTransaction ttx)
   {
     // make sure we have this tariff
+	System.out.println("Transaction come");
     TariffSpecification newSpec = ttx.getTariffSpec();
+	Broker source = newSpec.getBroker();
+	System.out.println("From: "+source.getUsername());
     if (newSpec == null) {
       log.error("TariffTransaction type=" + ttx.getTxType()
                 + " for unknown spec");
@@ -317,17 +329,19 @@ implements PortfolioManager, Initializable, Activatable
     
     if (TariffTransaction.Type.SIGNUP == txType) {
       // keep track of customer counts
-	  //System.out.println("Signup! customer number: " + ttx.getCustomerCount());
-	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  //System.out.println("=====================================");
+	  System.out.println("Signup! customer number: " + ttx.getCustomerCount());
+	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  System.out.println("=====================================");
       record.signup(ttx.getCustomerCount());
+	  signupCount++;
     }
     else if (TariffTransaction.Type.WITHDRAW == txType) {
       // customers presumably found a better deal
-	  //System.out.println("Quit! customer number: " + ttx.getCustomerCount());
-	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  //System.out.println("=====================================");
+	  System.out.println("Quit! customer number: " + ttx.getCustomerCount());
+	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  System.out.println("=====================================");
       record.withdraw(ttx.getCustomerCount());
+	  withdrawCount++;
     }
     else if (TariffTransaction.Type.PRODUCE == txType) {
       // if ttx count and subscribe population don't match, it will be hard
@@ -343,7 +357,8 @@ implements PortfolioManager, Initializable, Activatable
         log.warn("consumption by subset " + ttx.getCustomerCount() +
                  " of subscribed population " + record.subscribedPopulation);
       }
-      record.produceConsume(ttx.getKWh(), ttx.getPostedTime());      
+      record.produceConsume(ttx.getKWh(), ttx.getPostedTime());  
+		consumeCount++;
     }
   }
 
@@ -393,38 +408,192 @@ implements PortfolioManager, Initializable, Activatable
    * Called after TimeslotComplete msg received. Note that activation order
    * among modules is non-deterministic.
    */
-  
+   private int tariff_creation=0;
+   private int dayn = 0;
+   private double old_mean = 0.0;
+   private double old_min = 0.0;
+   private double old_max = 0.0;
+   private double max_rate = 0;
+   private double min_rate = 0;
+   private double my_min=999;
+   private double oldCashPos=0;
+   private double CashPos=0;
+   private double pubfee=0;
+   private boolean pubFlag = false;
+   private int interest = 3;
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
+  
+	
+	System.out.println("timeslot is: " + timeslotIndex);
+	methods m = new methods();
+	Broker me = brokerContext.getBroker();
+	CashPos = me.getCashBalance();
+	if(pubFlag){
+		pubfee = oldCashPos - CashPos;
+		pubFlag = false;
+		System.out.println("Publication fee: " + pubfee);
+	}
+	//fixedRateList.add(2.0);
+	//TariffSpecification contariff = null;
     if (customerSubscriptions.size() == 0) {
       // we (most likely) have no tariffs
       createInitialTariffs();
+	  pubFlag = true;
     }
-    else {
-      // we have some, are they good enough?
-      improveTariffs();
-		double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
-		System.out.println("marketPrice = "+marketPrice);
-	  if(timeslotIndex%6000 == 0){
-	  System.out.println("time to creat new tariff");
-	  createInitialTariffs();}
-	  
-    }
-  }
-
-	//create new Tariffs when conditions meet
-	private void createTariff()
+	else
 	{
-	
-	
+	if (timeslotIndex%6 == 0){
+	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed, diff_min_fixed, diff_max_fixed;
+	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
+      if (null == tars || 0 == tars.size()){
+        System.out.println("No tariffs found");		
+		}
+      else {	
+		double ratevalue;
+		List<Double> fixedRateList = new ArrayList<Double>();			
+        for (TariffSpecification tar: tars) {
+		//Brokers
+		Broker sourceBroker = tar.getBroker();
+		if (!(sourceBroker.getUsername().equals("default broker")))
+		{
+		
+		
+		List<Rate> ratev = tar.getRates();
+		for (Rate rates: ratev){
+		if(rates.isFixed()){
+		ratevalue = rates.getValue();
+		System.out.println(ratevalue);
+		fixedRateList.add(ratevalue);
+		}
+		}
+		
+		}
+        }
+		mean_fixed = m.mean(fixedRateList);
+		sd_fixed = m.sd(fixedRateList);
+		min_rate = Collections.min(fixedRateList);
+		max_rate = Collections.max(fixedRateList);
+		if (old_mean == 0){
+		diff_mean_fixed = 0;
+		diff_min_fixed = 0;
+		diff_max_fixed = 0;
+		}
+		else{
+		diff_mean_fixed = mean_fixed - old_mean;
+		diff_max_fixed = max_rate - old_max;
+		diff_min_fixed = min_rate - old_min;
+		}
+		old_mean = mean_fixed;
+		old_min = min_rate;
+		old_max = max_rate;
+		
+		//	mean_fixed = (-1)*mean_fixed;
+		//	max_rate = (-1)*max_rate;
+		//	diff_mean_fixed = (-1)*diff_mean_fixed;
+		//	diff_max_fixed = (-1)*diff_max_fixed;
+			System.out.println("Period: " + dayn);
+			System.out.println("Mean of fixed rate: " + mean_fixed);
+			System.out.println("Min of fixed rate: " + max_rate);
+			System.out.println("Max of fixed rate: " + min_rate);
+			System.out.println("SD of fixed rate: " + sd_fixed);
+			System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
+			System.out.println("rate of change of min fixed rate: " + diff_max_fixed);			
+			//System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
+			System.out.println("Number of tariffs publish in 6 timeslot: " + tariff_count );
+		//System.out.println(contariff.getRealizedPrice);
+		
+		
+		}
+		if(interest>0 && (my_min < max_rate)) //max should be lowest price
+		{	
+			createTariffs(max_rate);
+			interest--;
+		}
+		else if(signupCount == 0 || consumeCount == 0)
+		{
+			//create; 			//no one buy!!!! suck!!!!
+			createTariffs(max_rate);
+		}
+		else if((CashPos-oldCashPos) > pubfee)
+		{
+			//create;
+			createTariffs(max_rate);
+		}
+		
+		dayn++;
+		tariff_count = 0;
+		signupCount = 0;
+		consumeCount = 0;
+		withdrawCount = 0;
+		oldCashPos = CashPos;
 	}
+	}	
+  }
+	private void createTariffs (double minRate)
+	  {
+		double rateValue = minRate;
+		boolean getp = true;
+		while(getp)
+		{
+		rateValue = minRate * (1-Math.random()*0.1);
+		if (rateValue > -0.06)
+		{
+		getp = false;
+		}
+		}
+		my_min = rateValue;	
+		TariffSpecification spec =
+		new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
+			.withMinDuration(256000000)
+			.withSignupPayment(signupPayment)
+			.withEarlyWithdrawPayment(earlyWithdrawPayment);	
+		Rate rate = new Rate().withValue(rateValue);
+		spec.addRate(rate);
+		customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
+		tariffRepo.addSpecification(spec);
+		// = me.getCashBalance();
+		brokerContext.sendMessage(spec);
+	  }  
+  
+  
+  
+  
+class methods{
+
+public double sum(List<Double> a){
+	if(a.size() > 0){
+	double sum = 0;
+	for(Double i: a){
+	sum = sum + i;
+	}
+	return sum;
+	}
+	return 0;
+}
+public double mean (List<Double> a){
+	double sum = sum(a);
+	double mean = 0;
+	if (a.size() != 0){
+	mean = sum / (a.size() * 1.0);
+	return mean;
+	}
+	else
+	return 0;
+}
+public double sd (List<Double> a){
+    double sum = 0;
+    double mean = mean(a);
+ 
+    for (double i : a)
+        sum += Math.pow((i - mean), 2);
+    return Math.sqrt( sum / ( a.size() - 1 ) ); 
+    }
+}
   
   // Creates initial tariffs for the main power types. These are simple
   // fixed-rate two-part tariffs that give the broker a fixed margin.
-  
-  
-  
   private void createInitialTariffs ()
   {
     // remember that market prices are per mwh, but tariffs are by kwh
@@ -433,8 +602,8 @@ implements PortfolioManager, Initializable, Activatable
     // for each power type representing a customer population,
     // create a tariff that's better than what's available
 	double rateValue;
-	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
-		
+	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin) * (1-Math.random()*0.1));
+	my_min = rateValue;	
 	TariffSpecification spec =
     new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
 		.withMinDuration(256000000)
@@ -444,13 +613,15 @@ implements PortfolioManager, Initializable, Activatable
     spec.addRate(rate);
     customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
     tariffRepo.addSpecification(spec);
+	// = me.getCashBalance();
     brokerContext.sendMessage(spec);
+	/**
     for (PowerType pt : customerProfiles.keySet()) {
       // we'll just do fixed-rate tariffs for now
 	//System.out.println(pt);
       
 		if (pt.isProduction()){
-		rateValue = -2.0 * marketPrice;	
+		rateValue = -2.0 * marketPrice * (1-Math.random()*0.1);	
 		TariffSpecification spec2 =
         new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
 		.withMinDuration(256000000)
@@ -463,7 +634,9 @@ implements PortfolioManager, Initializable, Activatable
       brokerContext.sendMessage(spec2);
 		break;
 		}
+		
     }
+	**/
   }
 
   // Checks to see whether our tariffs need fine-tuning
@@ -496,7 +669,7 @@ implements PortfolioManager, Initializable, Activatable
       }
     }
     // magic-number hack to supersede a tariff
-    if (0 == timeslotIndex) {
+    if (380 == timeslotIndex) {
       // find the existing CONSUMPTION tariff
       TariffSpecification oldc = null;
       List<TariffSpecification> candidates =
@@ -519,9 +692,9 @@ implements PortfolioManager, Initializable, Activatable
           // create a new CONSUMPTION tariff
           TariffSpecification spec =
             new TariffSpecification(brokerContext.getBroker(),
-                                    PowerType.CONSUMPTION).withMinDuration(256000000).withEarlyWithdrawPayment(earlyWithdrawPayment);
+                                    PowerType.CONSUMPTION);//.withMinDuration(2560000).withEarlyWithdrawPayment(0.1);
                 //.withPeriodicPayment(defaultPeriodicPayment * 1.1);
-          Rate rate = new Rate().withValue(rateValue*0.9);
+          Rate rate = new Rate().withValue(rateValue);
           spec.addRate(rate);
           if (null != oldc)
             spec.addSupersedes(oldc.getId());
