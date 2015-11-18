@@ -443,10 +443,15 @@ implements PortfolioManager, Initializable, Activatable
 		}
         }
 		}
+		
 		mean_fixed = m.mean(fixedRateList);
 		sd_fixed = m.sd(fixedRateList);
-		double min_rate = Collections.min(fixedRateList);
-		double max_rate = Collections.max(fixedRateList);
+		double min_rate = 0;
+		double max_rate = 0;
+		if(fixedRateList!=null){
+		min_rate = Collections.min(fixedRateList);
+		max_rate = Collections.max(fixedRateList);
+		}
 		if (old_mean == 0){
 		diff_mean_fixed = 0;
 		diff_min_fixed = 0;
