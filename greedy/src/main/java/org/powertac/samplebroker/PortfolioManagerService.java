@@ -126,7 +126,12 @@ implements PortfolioManager, Initializable, Activatable
 
   @ConfigurableValue(valueType = "Double",
           description = "min duration")
-  private double minDuration = 0;    
+  private double minDuration = 0;
+
+   @ConfigurableValue(valueType = "Double",
+          description = "lower bound")
+  private double lowerbound = 0;
+  
   
 
   /**
@@ -445,7 +450,12 @@ implements PortfolioManager, Initializable, Activatable
 	else
 	{
 	if (timeslotIndex%6 == 0){
-	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed, diff_min_fixed, diff_max_fixed;
+	double mean_fixed = 0;
+	double sd_fixed = 0;
+	double rate_publish = 0;
+	double diff_mean_fixed = 0;
+	double diff_min_fixed = 0;
+	double diff_max_fixed = 0;
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
       if (null == tars || 0 == tars.size()){
         System.out.println("No tariffs found");		
@@ -528,18 +538,20 @@ implements PortfolioManager, Initializable, Activatable
 		}
 		if(interest>0 && (my_min < max_rate)) //max should be lowest price
 		{	
-			createTariffs(max_rate);
+			createTariffs((max_rate+mean_fixed)/2);
 			interest--;
 		}
 		else if(signupCount == 0 || consumeCount == 0)
 		{
 			//create; 			//no one buy!!!! suck!!!!
+			System.out.println("case 2 publish, no one buy energy");
 			createTariffs(max_rate);
 		}
 		else if((CashPos-oldCashPos) > pubfee)
 		{
 			//create;
-			createTariffs(max_rate);
+			System.out.println("case 3 publish");
+			createTariffs(mean_fixed);
 		}
 		
 		dayn++;
@@ -556,14 +568,15 @@ implements PortfolioManager, Initializable, Activatable
 		System.out.println("minRate: " + minRate);
 		double rateValue = minRate;
 		boolean getp = true;
-		while(getp)
+		//while(getp)
+		//{
+		rateValue = minRate * (1-Math.random()*0.01);
+		if (rateValue > -0.065)
 		{
-		rateValue = minRate * (1-Math.random()*0.1);
-		if (rateValue < -0.06)
-		{
-		getp = false;
+		//getp = false;
+		rateValue = -0.065;
 		}
-		}
+		//}
 		my_min = rateValue;	
 		TariffSpecification spec =
 		new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
