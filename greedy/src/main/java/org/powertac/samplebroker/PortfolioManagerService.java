@@ -308,10 +308,10 @@ implements PortfolioManager, Initializable, Activatable
   public synchronized void handleMessage(TariffTransaction ttx)
   {
     // make sure we have this tariff
-	System.out.println("Transaction come");
+	//System.out.println("Transaction come");
     TariffSpecification newSpec = ttx.getTariffSpec();
-	Broker source = newSpec.getBroker();
-	System.out.println("From: "+source.getUsername());
+	//Broker source = newSpec.getBroker();
+	//System.out.println("From: "+source.getUsername());
     if (newSpec == null) {
       log.error("TariffTransaction type=" + ttx.getTxType()
                 + " for unknown spec");
@@ -451,58 +451,78 @@ implements PortfolioManager, Initializable, Activatable
         System.out.println("No tariffs found");		
 		}
       else {	
-		double ratevalue;
-		List<Double> fixedRateList = new ArrayList<Double>();			
-        for (TariffSpecification tar: tars) {
-		//Brokers
-		Broker sourceBroker = tar.getBroker();
-		if (!(sourceBroker.getUsername().equals("default broker")))
-		{
-		
-		
-		List<Rate> ratev = tar.getRates();
-		for (Rate rates: ratev){
-		if(rates.isFixed()){
-		ratevalue = rates.getValue();
-		System.out.println(ratevalue);
-		fixedRateList.add(ratevalue);
-		}
-		}
-		
-		}
-        }
-		mean_fixed = m.mean(fixedRateList);
-		sd_fixed = m.sd(fixedRateList);
-		min_rate = Collections.min(fixedRateList);
-		max_rate = Collections.max(fixedRateList);
-		if (old_mean == 0){
-		diff_mean_fixed = 0;
-		diff_min_fixed = 0;
-		diff_max_fixed = 0;
-		}
-		else{
-		diff_mean_fixed = mean_fixed - old_mean;
-		diff_max_fixed = max_rate - old_max;
-		diff_min_fixed = min_rate - old_min;
-		}
-		old_mean = mean_fixed;
-		old_min = min_rate;
-		old_max = max_rate;
-		
-		//	mean_fixed = (-1)*mean_fixed;
-		//	max_rate = (-1)*max_rate;
-		//	diff_mean_fixed = (-1)*diff_mean_fixed;
-		//	diff_max_fixed = (-1)*diff_max_fixed;
-			System.out.println("Period: " + dayn);
-			System.out.println("Mean of fixed rate: " + mean_fixed);
-			System.out.println("Min of fixed rate: " + max_rate);
-			System.out.println("Max of fixed rate: " + min_rate);
-			System.out.println("SD of fixed rate: " + sd_fixed);
-			System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
-			System.out.println("rate of change of min fixed rate: " + diff_max_fixed);			
-			//System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
-			System.out.println("Number of tariffs publish in 6 timeslot: " + tariff_count );
-		//System.out.println(contariff.getRealizedPrice);
+			double ratevalue;
+			List<Double> fixedRateList = new ArrayList<Double>();			
+			for (TariffSpecification tar: tars) {
+			//Brokers
+			Broker sourceBroker = tar.getBroker();
+			if (!(sourceBroker.getUsername().equals("default broker")))
+			{
+			
+			
+			List<Rate> ratev = tar.getRates();
+			for (Rate rates: ratev){
+			if(rates.isFixed()){
+			ratevalue = rates.getValue();
+			System.out.println(ratevalue);
+			fixedRateList.add(ratevalue);
+			}
+			}
+			
+			}
+			}
+			List<TariffSpecification> myspecs = tariffRepo.findTariffSpecificationsByBroker(brokerContext.getBroker());
+			if (null == myspecs || 0 == myspecs.size()){
+				System.out.println("No tariffs for us found");
+				}
+			else{
+				for(TariffSpecification myspec: myspecs){
+					if (PowerType.CONSUMPTION == myspec.getPowerType()) {
+						List<Rate> ratev = myspec.getRates();
+						for (Rate rates: ratev){
+						if(rates.isFixed()){
+						ratevalue = rates.getValue();
+						System.out.println(ratevalue);
+						fixedRateList.add(ratevalue);
+						}
+						}									
+					}
+				}
+			}
+					
+			
+			mean_fixed = m.mean(fixedRateList);
+			sd_fixed = m.sd(fixedRateList);
+			min_rate = Collections.min(fixedRateList);
+			max_rate = Collections.max(fixedRateList);
+			if (old_mean == 0){
+			diff_mean_fixed = 0;
+			diff_min_fixed = 0;
+			diff_max_fixed = 0;
+			}
+			else{
+			diff_mean_fixed = mean_fixed - old_mean;
+			diff_max_fixed = max_rate - old_max;
+			diff_min_fixed = min_rate - old_min;
+			}
+			old_mean = mean_fixed;
+			old_min = min_rate;
+			old_max = max_rate;
+			
+			//	mean_fixed = (-1)*mean_fixed;
+			//	max_rate = (-1)*max_rate;
+			//	diff_mean_fixed = (-1)*diff_mean_fixed;
+			//	diff_max_fixed = (-1)*diff_max_fixed;
+				System.out.println("Period: " + dayn);
+				System.out.println("Mean of fixed rate: " + mean_fixed);
+				System.out.println("Min of fixed rate: " + max_rate);
+				System.out.println("Max of fixed rate: " + min_rate);
+				System.out.println("SD of fixed rate: " + sd_fixed);
+				System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
+				System.out.println("rate of change of min fixed rate: " + diff_max_fixed);			
+				//System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
+				System.out.println("Number of tariffs publish in 6 timeslot: " + tariff_count );
+			//System.out.println(contariff.getRealizedPrice);
 		
 		
 		}
@@ -533,12 +553,13 @@ implements PortfolioManager, Initializable, Activatable
   }
 	private void createTariffs (double minRate)
 	  {
+		System.out.println("minRate: " + minRate);
 		double rateValue = minRate;
 		boolean getp = true;
 		while(getp)
 		{
 		rateValue = minRate * (1-Math.random()*0.1);
-		if (rateValue > -0.06)
+		if (rateValue < -0.06)
 		{
 		getp = false;
 		}

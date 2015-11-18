@@ -292,7 +292,7 @@ implements PortfolioManager, Initializable, Activatable
   public synchronized void handleMessage(TariffTransaction ttx)
   {
     // make sure we have this tariff
-	System.out.println("Transaction come");
+	//System.out.println("Transaction come");
     TariffSpecification newSpec = ttx.getTariffSpec();
     if (newSpec == null) {
       log.error("TariffTransaction type=" + ttx.getTxType()
@@ -429,6 +429,10 @@ implements PortfolioManager, Initializable, Activatable
 		double ratevalue;
 		List<Double> fixedRateList = new ArrayList<Double>();			
         for (TariffSpecification tar: tars) {
+		Broker sourceBroker = tar.getBroker();
+		if (!(sourceBroker.getUsername().equals("default broker")))
+		{
+		
 		List<Rate> ratev = tar.getRates();
 		for (Rate rates: ratev){
 		if(rates.isFixed()){
@@ -438,6 +442,7 @@ implements PortfolioManager, Initializable, Activatable
 		}
 		}
         }
+		}
 		mean_fixed = m.mean(fixedRateList);
 		sd_fixed = m.sd(fixedRateList);
 		double min_rate = Collections.min(fixedRateList);
