@@ -651,7 +651,7 @@ public double sd (List<Double> a){
     brokerContext.sendMessage(spec);
 	
 		//production
-		rateValue = -1.2 * marketPrice;
+		rateValue = -0.5 * marketPrice;
 		TariffSpecification spec2 =
         new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
 		.withMinDuration(256000000)
