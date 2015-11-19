@@ -625,7 +625,7 @@ public double sd (List<Double> a){
     return Math.sqrt( sum / ( a.size() - 1 ) ); 
     }
 }
-  
+ 
   // Creates initial tariffs for the main power types. These are simple
   // fixed-rate two-part tariffs that give the broker a fixed margin.
   private void createInitialTariffs ()
@@ -649,6 +649,21 @@ public double sd (List<Double> a){
     tariffRepo.addSpecification(spec);
 	// = me.getCashBalance();
     brokerContext.sendMessage(spec);
+	
+		//production
+		rateValue = -1.2 * marketPrice;
+		TariffSpecification spec2 =
+        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
+		.withMinDuration(256000000)
+		.withSignupPayment(signupPayment)
+		.withEarlyWithdrawPayment(earlyWithdrawPayment);	
+		rate = new Rate().withValue(rateValue);
+		spec2.addRate(rate);
+		customerSubscriptions.put(spec2, new HashMap<CustomerInfo, CustomerRecord>());
+		tariffRepo.addSpecification(spec2);
+		brokerContext.sendMessage(spec2);	
+	
+	
 	/**
     for (PowerType pt : customerProfiles.keySet()) {
       // we'll just do fixed-rate tariffs for now
