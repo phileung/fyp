@@ -533,6 +533,8 @@ implements PortfolioManager, Initializable, Activatable
 			//	diff_mean_fixed = (-1)*diff_mean_fixed;
 			//	diff_max_fixed = (-1)*diff_max_fixed;
 				System.out.println("Period: " + dayn);
+				System.out.println("Mean of signup: " + mean_signup);
+				System.out.println("Mean of signup: " + max_signup);
 				System.out.println("Mean of fixed rate: " + mean_fixed);
 				System.out.println("Min of fixed rate: " + max_rate);
 				System.out.println("Max of fixed rate: " + min_rate);
