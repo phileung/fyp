@@ -632,7 +632,7 @@ public double sd (List<Double> a){
   {
     // remember that market prices are per mwh, but tariffs are by kwh
     double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
-	markerPrice = 0;
+	marketPrice = 0;
 	//System.out.println("marketPrice = "+marketPrice);
     // for each power type representing a customer population,
     // create a tariff that's better than what's available
