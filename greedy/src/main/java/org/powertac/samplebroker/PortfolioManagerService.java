@@ -334,17 +334,17 @@ implements PortfolioManager, Initializable, Activatable
     
     if (TariffTransaction.Type.SIGNUP == txType) {
       // keep track of customer counts
-	  System.out.println("Signup! customer number: " + ttx.getCustomerCount());
-	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  System.out.println("=====================================");
+	  //System.out.println("Signup! customer number: " + ttx.getCustomerCount());
+	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  //System.out.println("=====================================");
       record.signup(ttx.getCustomerCount());
 	  signupCount++;
     }
     else if (TariffTransaction.Type.WITHDRAW == txType) {
       // customers presumably found a better deal
-	  System.out.println("Quit! customer number: " + ttx.getCustomerCount());
-	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  System.out.println("=====================================");
+	  //System.out.println("Quit! customer number: " + ttx.getCustomerCount());
+	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  //System.out.println("=====================================");
       record.withdraw(ttx.getCustomerCount());
 	  withdrawCount++;
     }
@@ -474,7 +474,7 @@ implements PortfolioManager, Initializable, Activatable
 			for (Rate rates: ratev){
 			if(rates.isFixed()){
 			ratevalue = rates.getValue();
-			System.out.println(ratevalue);
+			//System.out.println(ratevalue);
 			fixedRateList.add(ratevalue);
 			}
 			}
@@ -565,7 +565,7 @@ implements PortfolioManager, Initializable, Activatable
   }
 	private void createTariffs (double minRate)
 	  {
-		System.out.println("minRate: " + minRate);
+		//System.out.println("minRate: " + minRate);
 		double rateValue = minRate;
 		boolean getp = true;
 		//while(getp)
@@ -632,7 +632,8 @@ public double sd (List<Double> a){
   {
     // remember that market prices are per mwh, but tariffs are by kwh
     double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
-	System.out.println("marketPrice = "+marketPrice);
+	markerPrice = 0;
+	//System.out.println("marketPrice = "+marketPrice);
     // for each power type representing a customer population,
     // create a tariff that's better than what's available
 	double rateValue;
