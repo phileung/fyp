@@ -451,6 +451,8 @@ implements PortfolioManager, Initializable, Activatable
 	{
 	if (timeslotIndex%6 == 0){
 	double mean_fixed = 0;
+	double mean_signup = 0;
+	double max_signup = 0;
 	double sd_fixed = 0;
 	double rate_publish = 0;
 	double diff_mean_fixed = 0;
@@ -462,7 +464,8 @@ implements PortfolioManager, Initializable, Activatable
 		}
       else {	
 			double ratevalue;
-			List<Double> fixedRateList = new ArrayList<Double>();			
+			List<Double> fixedRateList = new ArrayList<Double>();
+			List<Double> signupList = new ArrayList<Double>();
 			for (TariffSpecification tar: tars) {
 			//Brokers
 			Broker sourceBroker = tar.getBroker();
@@ -476,9 +479,10 @@ implements PortfolioManager, Initializable, Activatable
 			ratevalue = rates.getValue();
 			//System.out.println(ratevalue);
 			fixedRateList.add(ratevalue);
-			}
-			}
 			
+			}
+			}
+			signupList.add(tar.getSignupPayment());
 			}
 			}
 			List<TariffSpecification> myspecs = tariffRepo.findTariffSpecificationsByBroker(brokerContext.getBroker());
@@ -494,9 +498,12 @@ implements PortfolioManager, Initializable, Activatable
 						ratevalue = rates.getValue();
 						System.out.println(ratevalue);
 						fixedRateList.add(ratevalue);
+						
 						}
-						}									
+						}
+						signupList.add(myspec.getSignupPayment());
 					}
+					
 				}
 			}
 					
@@ -505,6 +512,8 @@ implements PortfolioManager, Initializable, Activatable
 			sd_fixed = m.sd(fixedRateList);
 			min_rate = Collections.min(fixedRateList);
 			max_rate = Collections.max(fixedRateList);
+			mean_signup = m.mean(signupList);
+			max_signup = Collections.max(signupList);
 			if (old_mean == 0){
 			diff_mean_fixed = 0;
 			diff_min_fixed = 0;
