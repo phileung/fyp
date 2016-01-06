@@ -460,7 +460,7 @@ implements PortfolioManager, Initializable, Activatable
 	  pubFlag = true;
     }
 
-	if (timeslotIndex%6 == 0){
+	if (timeslotIndex%6 == 0&&timeslotIndex>360){
 	double mean_fixed = 0;
     double max_rate = 0;
     double min_rate = 0;	
