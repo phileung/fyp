@@ -337,6 +337,7 @@ implements PortfolioManager, Initializable, Activatable
 	  //System.out.println("Signup! customer number: " + ttx.getCustomerCount());
 	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
 	  //System.out.println("=====================================");
+	
       record.signup(ttx.getCustomerCount());
 	  signupCount++;
     }
@@ -418,20 +419,21 @@ implements PortfolioManager, Initializable, Activatable
    private double old_mean = 0.0;
    private double old_min = 0.0;
    private double old_max = 0.0;
-   private double max_rate = 0;
-   private double min_rate = 0;
    private double my_min=999;
+   private double old_mean_signup = 0;
    private double oldCashPos=0;
    private double CashPos=0;
    private double pubfee=0;
    private boolean pubFlag = false;
    private int interest = 3;
+
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
   
 	
 	System.out.println("timeslot is: " + timeslotIndex);
+	
 	methods m = new methods();
 	Broker me = brokerContext.getBroker();
 	CashPos = me.getCashBalance();
@@ -444,17 +446,22 @@ implements PortfolioManager, Initializable, Activatable
 	//TariffSpecification contariff = null;
     if (customerSubscriptions.size() == 0) {
       // we (most likely) have no tariffs
-      createInitialTariffs();
+      //createInitialTariffs();
 	  pubFlag = true;
     }
 	else
 	{
 	if (timeslotIndex%6 == 0){
 	double mean_fixed = 0;
+    double max_rate = 0;
+    double min_rate = 0;	
+	double sd_fixed = 0;
 	double mean_signup = 0;
 	double max_signup = 0;
-	double sd_fixed = 0;
+	double min_signup = 0;
+	double sd_signup = 0;	
 	double rate_publish = 0;
+	double diff_mean_signup = 0;
 	double diff_mean_fixed = 0;
 	double diff_min_fixed = 0;
 	double diff_max_fixed = 0;
@@ -506,14 +513,14 @@ implements PortfolioManager, Initializable, Activatable
 					
 				}
 			}
-					
-			
 			mean_fixed = m.mean(fixedRateList);
 			sd_fixed = m.sd(fixedRateList);
 			min_rate = Collections.min(fixedRateList);
 			max_rate = Collections.max(fixedRateList);
 			mean_signup = m.mean(signupList);
 			max_signup = Collections.max(signupList);
+			min_signup = Collections.min(signupList);
+			sd_signup = m.sd(signupList);
 			if (old_mean == 0){
 			diff_mean_fixed = 0;
 			diff_min_fixed = 0;
@@ -524,26 +531,32 @@ implements PortfolioManager, Initializable, Activatable
 			diff_max_fixed = max_rate - old_max;
 			diff_min_fixed = min_rate - old_min;
 			}
-			old_mean = mean_fixed;
-			old_min = min_rate;
-			old_max = max_rate;
+			if (old_mean_signup == 0){
+			diff_mean_signup = 0;
+			}
+			else{
+			diff_mean_signup = mean_signup - old_mean_signup;
+			}			
+			old_mean_signup = mean_signup;
 			
 			//	mean_fixed = (-1)*mean_fixed;
 			//	max_rate = (-1)*max_rate;
 			//	diff_mean_fixed = (-1)*diff_mean_fixed;
 			//	diff_max_fixed = (-1)*diff_max_fixed;
 				System.out.println("Period: " + dayn);
-				System.out.println("Mean of signup: " + mean_signup);
-				System.out.println("Mean of signup: " + max_signup);
 				System.out.println("Mean of fixed rate: " + mean_fixed);
-				System.out.println("Min of fixed rate: " + max_rate);
-				System.out.println("Max of fixed rate: " + min_rate);
+				System.out.println("Max of fixed rate: " + max_rate);
+				System.out.println("Min of fixed rate: " + min_rate);
 				System.out.println("SD of fixed rate: " + sd_fixed);
 				System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
-				System.out.println("rate of change of min fixed rate: " + diff_max_fixed);			
-				//System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
+				System.out.println("Mean of signup: " + mean_signup);
+				System.out.println("Max of signup: " + max_signup);
+				System.out.println("Min of signup: " + min_signup);
+				System.out.println("SD of signup: " + sd_signup);
+				System.out.println("rate of change of mean signup: " + diff_mean_signup);				
+				System.out.println("Subscription of customers to Agent: "+ signupCount);
 				System.out.println("Number of tariffs publish in 6 timeslot: " + tariff_count );
-			//System.out.println(contariff.getRealizedPrice);
+	
 		
 		
 		}

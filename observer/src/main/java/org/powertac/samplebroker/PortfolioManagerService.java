@@ -106,15 +106,32 @@ implements PortfolioManager, Initializable, Activatable
   // or in top-level config file
   @ConfigurableValue(valueType = "Double",
           description = "target profit margin")
-  private double defaultMargin = 0.01;
+  private double defaultMargin = 0.1;
 
   @ConfigurableValue(valueType = "Double",
           description = "Fixed cost/kWh")
-  private double fixedPerKwh = -0.35;
+  private double fixedPerKwh = -0.2;
 
   @ConfigurableValue(valueType = "Double",
           description = "Default daily meter charge")
   private double defaultPeriodicPayment = 0;
+  
+  @ConfigurableValue(valueType = "Double",
+          description = "signup payment")
+  private double signupPayment = 0;  
+  
+  @ConfigurableValue(valueType = "Double",
+          description = "early withdraw payment")
+  private double earlyWithdrawPayment = 0;  
+
+  @ConfigurableValue(valueType = "Double",
+          description = "min duration")
+  private double minDuration = 0;
+
+   @ConfigurableValue(valueType = "Double",
+          description = "lower bound")
+  private double lowerbound = 0;
+  
   
 
   /**
@@ -289,11 +306,17 @@ implements PortfolioManager, Initializable, Activatable
    * Handles a TariffTransaction. We only care about certain types: PRODUCE,
    * CONSUME, SIGNUP, and WITHDRAW.
    */
+   
+  private int signupCount = 0;
+  private int consumeCount = 0;
+  private int withdrawCount = 0;
   public synchronized void handleMessage(TariffTransaction ttx)
   {
     // make sure we have this tariff
 	//System.out.println("Transaction come");
     TariffSpecification newSpec = ttx.getTariffSpec();
+	//Broker source = newSpec.getBroker();
+	//System.out.println("From: "+source.getUsername());
     if (newSpec == null) {
       log.error("TariffTransaction type=" + ttx.getTxType()
                 + " for unknown spec");
@@ -311,17 +334,20 @@ implements PortfolioManager, Initializable, Activatable
     
     if (TariffTransaction.Type.SIGNUP == txType) {
       // keep track of customer counts
-	  System.out.println("Signup! customer number: " + ttx.getCustomerCount());
-	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  System.out.println("=====================================");
+	  //System.out.println("Signup! customer number: " + ttx.getCustomerCount());
+	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  //System.out.println("=====================================");
+	
       record.signup(ttx.getCustomerCount());
+	  signupCount++;
     }
     else if (TariffTransaction.Type.WITHDRAW == txType) {
       // customers presumably found a better deal
-	  System.out.println("Quit! customer number: " + ttx.getCustomerCount());
-	  System.out.println("Check subscribed number: " + record.subscribedPopulation);
-	  System.out.println("=====================================");
+	  //System.out.println("Quit! customer number: " + ttx.getCustomerCount());
+	  //System.out.println("Check subscribed number: " + record.subscribedPopulation);
+	  //System.out.println("=====================================");
       record.withdraw(ttx.getCustomerCount());
+	  withdrawCount++;
     }
     else if (TariffTransaction.Type.PRODUCE == txType) {
       // if ttx count and subscribe population don't match, it will be hard
@@ -337,7 +363,8 @@ implements PortfolioManager, Initializable, Activatable
         log.warn("consumption by subset " + ttx.getCustomerCount() +
                  " of subscribed population " + record.subscribedPopulation);
       }
-      record.produceConsume(ttx.getKWh(), ttx.getPostedTime());      
+      record.produceConsume(ttx.getKWh(), ttx.getPostedTime());  
+		consumeCount++;
     }
   }
 
@@ -389,15 +416,24 @@ implements PortfolioManager, Initializable, Activatable
    */
    private int tariff_creation=0;
    private int dayn = 0;
-   private boolean fwflag = true;
    private double old_mean = 0.0;
    private double old_min = 0.0;
    private double old_max = 0.0;
+   private double my_min=999;
+   private double old_mean_signup = 0;
+   private double oldCashPos=0;
+   private double CashPos=0;
+   private double pubfee=0;
+   private boolean pubFlag = false;
+   private int interest = 3;
+   private boolean fwflag = true;
    private FileWriter fw = null;
-   
+
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
+  
+	
 	System.out.println("timeslot is: " + timeslotIndex);
 	System.out.println("openfile flag: " + fwflag);
 	if(fwflag){
@@ -409,112 +445,232 @@ implements PortfolioManager, Initializable, Activatable
 	}}	
 	
 	methods m = new methods();
+	Broker me = brokerContext.getBroker();
+	CashPos = me.getCashBalance();
+	if(pubFlag){
+		pubfee = oldCashPos - CashPos;
+		pubFlag = false;
+		System.out.println("Publication fee: " + pubfee);
+	}
 	//fixedRateList.add(2.0);
-	TariffSpecification contariff = null;
-	
-	if (timeslotIndex%24 == 0){
-	double mean_fixed, sd_fixed, rate_publish, diff_mean_fixed, diff_min_fixed, diff_max_fixed;
+	//TariffSpecification contariff = null;
+    if (customerSubscriptions.size() == 0) {
+      // we (most likely) have no tariffs
+      //createInitialTariffs();
+	  pubFlag = true;
+    }
+	else
+	{
+	if (timeslotIndex%6 == 0){
+	double mean_fixed = 0;
+    double max_rate = 0;
+    double min_rate = 0;	
+	double sd_fixed = 0;
+	double mean_signup = 0;
+	double max_signup = 0;
+	double min_signup = 0;
+	double sd_signup = 0;	
+	double rate_publish = 0;
+	double diff_mean_signup = 0;
+	double diff_mean_fixed = 0;
+	double diff_min_fixed = 0;
+	double diff_max_fixed = 0;
 	List<TariffSpecification> tars = getCompetingTariffs(PowerType.CONSUMPTION);	
       if (null == tars || 0 == tars.size()){
-        System.out.println("No tariffs found");
-		try{
-		fw.write("No tariffs found");
-		fw.write(System.getProperty("line.separator"));
-		}
-		catch(IOException e){
-	
-		}		
+        System.out.println("No tariffs found");		
 		}
       else {	
-		double ratevalue;
-		List<Double> fixedRateList = new ArrayList<Double>();			
-        for (TariffSpecification tar: tars) {
-		Broker sourceBroker = tar.getBroker();
-		if (!(sourceBroker.getUsername().equals("default broker")))
+			double ratevalue;
+			List<Double> fixedRateList = new ArrayList<Double>();
+			List<Double> signupList = new ArrayList<Double>();
+			for (TariffSpecification tar: tars) {
+			//Brokers
+			Broker sourceBroker = tar.getBroker();
+			if (!(sourceBroker.getUsername().equals("default broker")))
+			{
+			
+			
+			List<Rate> ratev = tar.getRates();
+			for (Rate rates: ratev){
+			if(rates.isFixed()){
+			ratevalue = rates.getValue();
+			//System.out.println(ratevalue);
+			fixedRateList.add(ratevalue);
+			
+			}
+			}
+			signupList.add(tar.getSignupPayment());
+			}
+			}
+			List<TariffSpecification> myspecs = tariffRepo.findTariffSpecificationsByBroker(brokerContext.getBroker());
+			if (null == myspecs || 0 == myspecs.size()){
+				System.out.println("No tariffs for us found");
+				}
+			else{
+				for(TariffSpecification myspec: myspecs){
+					if (PowerType.CONSUMPTION == myspec.getPowerType()) {
+						List<Rate> ratev = myspec.getRates();
+						for (Rate rates: ratev){
+						if(rates.isFixed()){
+						ratevalue = rates.getValue();
+						System.out.println(ratevalue);
+						fixedRateList.add(ratevalue);
+						
+						}
+						}
+						signupList.add(myspec.getSignupPayment());
+					}
+					
+				}
+			}
+			mean_fixed = m.mean(fixedRateList);
+			sd_fixed = m.sd(fixedRateList);
+			min_rate = Collections.min(fixedRateList);
+			max_rate = Collections.max(fixedRateList);
+			mean_signup = m.mean(signupList);
+			max_signup = Collections.max(signupList);
+			min_signup = Collections.min(signupList);
+			sd_signup = m.sd(signupList);
+			if (old_mean == 0){
+			diff_mean_fixed = 0;
+			diff_min_fixed = 0;
+			diff_max_fixed = 0;
+			}
+			else{
+			diff_mean_fixed = mean_fixed - old_mean;
+			diff_max_fixed = max_rate - old_max;
+			diff_min_fixed = min_rate - old_min;
+			}
+			if (old_mean_signup == 0){
+			diff_mean_signup = 0;
+			}
+			else{
+			diff_mean_signup = mean_signup - old_mean_signup;
+			}			
+			old_mean_signup = mean_signup;
+			
+			//	mean_fixed = (-1)*mean_fixed;
+			//	max_rate = (-1)*max_rate;
+			//	diff_mean_fixed = (-1)*diff_mean_fixed;
+			//	diff_max_fixed = (-1)*diff_max_fixed;
+			double a_value = mean_fixed*(-10) + sd_fixed*(-10)+max_rate*(-10)+min_rate*(-10)+diff_mean_fixed*(-10)
+						   + mean_signup*(10) + sd_signup*(-10) + max_signup*(10) + min_signup*(10)+diff_mean_signup*(-10)
+						   + signupCount + tariff_count;
+								
+			
+			
+				System.out.println("Period: " + dayn);
+				System.out.println("Mean of fixed rate: " + mean_fixed);
+				System.out.println("Max of fixed rate: " + max_rate);
+				System.out.println("Min of fixed rate: " + min_rate);
+				System.out.println("SD of fixed rate: " + sd_fixed);
+				System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
+				System.out.println("Mean of signup: " + mean_signup);
+				System.out.println("Max of signup: " + max_signup);
+				System.out.println("Min of signup: " + min_signup);
+				System.out.println("SD of signup: " + sd_signup);
+				System.out.println("rate of change of mean signup: " + diff_mean_signup);				
+				System.out.println("Subscription of customers to Agent: "+ signupCount);
+				System.out.println("Number of tariffs publish in 6 timeslot: " + tariff_count );
+				System.out.println("Aggressive value: "+ a_value);
+			try{
+				fw.write("Period: " + dayn);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Mean of fixed rate: " + mean_fixed);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Max of fixed rate: " + max_rate);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Min of fixed rate: " + min_rate);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("SD of fixed rate: " + sd_fixed);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("rate of change of mean fixed rate: " + diff_mean_fixed);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Mean of signup: " + mean_signup);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Max of signup: " + max_signup);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Min of signup: " + min_signup);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("SD of signup: " + sd_signup);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("rate of change of mean signup: " + diff_mean_signup);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Subscription of customers to Agent: "+ signupCount);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Number of tariffs publish in 6 timeslot: " + tariff_count);
+				fw.write(System.getProperty("line.separator"));
+				fw.write("Aggressive value: "+ a_value);
+				fw.write("==========================================");
+				fw.write(System.getProperty("line.separator"));
+			    fw.write("==========================================");
+			    fw.write(System.getProperty("line.separator"));				
+				fw.flush();
+				
+				
+			}catch(IOException e){
+				e.printStackTrace();
+			}
+		
+		
+		}
+		if(interest>0 && (my_min < max_rate)) //max should be lowest price
+		{	
+			createTariffs((max_rate+mean_fixed)/2);
+			interest--;
+		}
+		else if(signupCount == 0 || consumeCount == 0)
 		{
-		
-		List<Rate> ratev = tar.getRates();
-		for (Rate rates: ratev){
-		if(rates.isFixed()){
-		ratevalue = rates.getValue();
-		System.out.println(ratevalue);
-		fixedRateList.add(ratevalue);
+			//create; 			//no one buy!!!! suck!!!!
+			System.out.println("case 2 publish, no one buy energy");
+			createTariffs(max_rate);
 		}
-		}
-        }
-		}
-		
-		mean_fixed = m.mean(fixedRateList);
-		sd_fixed = m.sd(fixedRateList);
-		double min_rate = 0;
-		double max_rate = 0;
-		if(fixedRateList!=null){
-		min_rate = Collections.min(fixedRateList);
-		max_rate = Collections.max(fixedRateList);
-		}
-		if (old_mean == 0){
-		diff_mean_fixed = 0;
-		diff_min_fixed = 0;
-		diff_max_fixed = 0;
-		}
-		else{
-		diff_mean_fixed = mean_fixed - old_mean;
-		diff_max_fixed = max_rate - old_max;
-		diff_min_fixed = min_rate - old_min;
-		}
-		old_mean = mean_fixed;
-		old_min = min_rate;
-		old_max = max_rate;
-		try{
-			mean_fixed = (-1)*mean_fixed;
-			max_rate = (-1)*max_rate;
-			diff_mean_fixed = (-1)*diff_mean_fixed;
-			diff_max_fixed = (-1)*diff_max_fixed;
-			fw.write("Day: " + dayn);
-			fw.write(System.getProperty("line.separator"));
-			fw.write("Mean of fixed rate: " + mean_fixed);
-			fw.write(System.getProperty("line.separator"));
-			fw.write("Min of fixed rate: " + max_rate);
-			fw.write(System.getProperty("line.separator"));
-			//fw.write("Min of fixed rate: " + min_rate);
-			//fw.write(System.getProperty("line.separator"));			
-			fw.write("SD of fixed rate: " + sd_fixed);
-			fw.write(System.getProperty("line.separator"));
-			fw.write("rate of change of mean fixed rate: " + diff_mean_fixed);
-			fw.write(System.getProperty("line.separator"));
-			fw.write("rate of change of min fixed rate: " + diff_max_fixed);
-			//fw.write(System.getProperty("line.separator"));
-			//fw.write("rate of change of min fixed rate: " + diff_min_fixed);
-			fw.write(System.getProperty("line.separator"));			
-			fw.write("Number of tariffs publish in 24 timeslot: " + tariff_count);
-			fw.write(System.getProperty("line.separator"));
-			fw.write("==========================================");
-			fw.write(System.getProperty("line.separator"));
-			fw.write("==========================================");
-			fw.write(System.getProperty("line.separator"));
-			fw.flush();
-			System.out.println("Day: " + dayn);
-			System.out.println("Mean of fixed rate: " + mean_fixed);
-			System.out.println("Min of fixed rate: " + max_rate);
-			//System.out.println("Minn of fixed rate: " + min_rate);
-			System.out.println("SD of fixed rate: " + sd_fixed);
-			System.out.println("rate of change of mean fixed rate: " + diff_mean_fixed);
-			System.out.println("rate of change of min fixed rate: " + diff_max_fixed);			
-			//System.out.println("rate of change of min fixed rate: " + diff_min_fixed);			
-			System.out.println("Number of tariffs publish in 24 timeslot: " + tariff_count );
-		}
-		catch(IOException e){
-	
+		else if((CashPos-oldCashPos) > pubfee)
+		{
+			//create;
+			System.out.println("case 3 publish");
+			createTariffs(mean_fixed);
 		}
 		
-		//System.out.println(contariff.getRealizedPrice);
-
-		
-		}
 		dayn++;
 		tariff_count = 0;
-	}		
+		signupCount = 0;
+		consumeCount = 0;
+		withdrawCount = 0;
+		oldCashPos = CashPos;
+	}
+	}	
   }
+	private void createTariffs (double minRate)
+	  {
+		//System.out.println("minRate: " + minRate);
+		double rateValue = minRate;
+		boolean getp = true;
+		//while(getp)
+		//{
+		rateValue = minRate * (1-Math.random()*0.01);
+		if (rateValue > -0.065)
+		{
+		//getp = false;
+		rateValue = -0.065;
+		}
+		//}
+		my_min = rateValue;	
+		TariffSpecification spec =
+		new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
+			.withMinDuration(256000000)
+			.withSignupPayment(signupPayment)
+			.withEarlyWithdrawPayment(earlyWithdrawPayment);	
+		Rate rate = new Rate().withValue(rateValue);
+		spec.addRate(rate);
+		customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
+		tariffRepo.addSpecification(spec);
+		// = me.getCashBalance();
+		brokerContext.sendMessage(spec);
+	  }  
+  
+  
+  
   
 class methods{
 
@@ -547,40 +703,58 @@ public double sd (List<Double> a){
     return Math.sqrt( sum / ( a.size() - 1 ) ); 
     }
 }
-  
+ 
   // Creates initial tariffs for the main power types. These are simple
   // fixed-rate two-part tariffs that give the broker a fixed margin.
   private void createInitialTariffs ()
   {
     // remember that market prices are per mwh, but tariffs are by kwh
     double marketPrice = marketManager.getMeanMarketPrice() / 1000.0;
-	System.out.println("marketPrice = "+marketPrice);
+	marketPrice = 0;
+	//System.out.println("marketPrice = "+marketPrice);
     // for each power type representing a customer population,
     // create a tariff that's better than what's available
 	double rateValue;
-	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin));
-		
+	rateValue = ((marketPrice + fixedPerKwh) * (1.0 + defaultMargin) * (1-Math.random()*0.1));
+	my_min = rateValue;	
 	TariffSpecification spec =
-    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION);
-		//.withMinDuration(2560000)
-		//.withSignupPayment(0.001)
-		//.withEarlyWithdrawPayment(-0.1);	
+    new TariffSpecification(brokerContext.getBroker(), PowerType.CONSUMPTION)
+		.withMinDuration(256000000)
+		.withSignupPayment(signupPayment)
+		.withEarlyWithdrawPayment(earlyWithdrawPayment);	
     Rate rate = new Rate().withValue(rateValue);
     spec.addRate(rate);
     customerSubscriptions.put(spec, new HashMap<CustomerInfo, CustomerRecord>());
     tariffRepo.addSpecification(spec);
+	// = me.getCashBalance();
     brokerContext.sendMessage(spec);
+	
+		//production
+		rateValue = -0.5 * marketPrice;
+		TariffSpecification spec2 =
+        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
+		.withMinDuration(256000000)
+		.withSignupPayment(signupPayment)
+		.withEarlyWithdrawPayment(earlyWithdrawPayment);	
+		rate = new Rate().withValue(rateValue);
+		spec2.addRate(rate);
+		customerSubscriptions.put(spec2, new HashMap<CustomerInfo, CustomerRecord>());
+		tariffRepo.addSpecification(spec2);
+		brokerContext.sendMessage(spec2);	
+	
+	
+	/**
     for (PowerType pt : customerProfiles.keySet()) {
       // we'll just do fixed-rate tariffs for now
 	//System.out.println(pt);
       
 		if (pt.isProduction()){
-		rateValue = -1.5 * marketPrice;	
+		rateValue = -2.0 * marketPrice * (1-Math.random()*0.1);	
 		TariffSpecification spec2 =
-        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION);
-		//.withMinDuration(2560000)
-		//.withSignupPayment(0.001)
-		//.withEarlyWithdrawPayment(-0.1);	
+        new TariffSpecification(brokerContext.getBroker(), PowerType.PRODUCTION)
+		.withMinDuration(256000000)
+		.withSignupPayment(signupPayment)
+		.withEarlyWithdrawPayment(earlyWithdrawPayment);	
       rate = new Rate().withValue(rateValue);
       spec2.addRate(rate);
       customerSubscriptions.put(spec2, new HashMap<CustomerInfo, CustomerRecord>());
@@ -588,7 +762,9 @@ public double sd (List<Double> a){
       brokerContext.sendMessage(spec2);
 		break;
 		}
+		
     }
+	**/
   }
 
   // Checks to see whether our tariffs need fine-tuning
