@@ -446,7 +446,7 @@ implements PortfolioManager, Initializable, Activatable
 	//TariffSpecification contariff = null;
     if (customerSubscriptions.size() == 0) {
       // we (most likely) have no tariffs
-      //createInitialTariffs();
+      createInitialTariffs();
 	  pubFlag = true;
     }
 	else

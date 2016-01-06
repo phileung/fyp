@@ -459,8 +459,7 @@ implements PortfolioManager, Initializable, Activatable
       //createInitialTariffs();
 	  pubFlag = true;
     }
-	else
-	{
+
 	if (timeslotIndex%6 == 0){
 	double mean_fixed = 0;
     double max_rate = 0;
@@ -639,7 +638,7 @@ implements PortfolioManager, Initializable, Activatable
 		withdrawCount = 0;
 		oldCashPos = CashPos;
 	}
-	}	
+	
   }
 	private void createTariffs (double minRate)
 	  {
