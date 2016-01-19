@@ -374,6 +374,7 @@ implements PortfolioManager, Initializable, Activatable
   @Override // from Activatable
   public synchronized void activate (int timeslotIndex)
   {
+	  System.out.println("in game");
     if (customerSubscriptions.size() == 0) {
       // we (most likely) have no tariffs
       createInitialTariffs();
